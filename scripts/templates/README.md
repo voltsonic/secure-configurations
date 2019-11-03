@@ -19,4 +19,4 @@ Several options include:
 -   Keybase (examples, this is the most seamless experience because you can setup Keybase to require your passphrase on login which secures the configurations at rest)
 -   VeraCrypt (mount the drive and configure to that drive).
 
-Check [Example Setup](./example-setup/README.md) for a good introduction on how to use this library.
+Check [Example Setup](https://github.com/voltsonic/secure-configurations/blob/HEAD/example-setup) for a good introduction on how to use this library.
