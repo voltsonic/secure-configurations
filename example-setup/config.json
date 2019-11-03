@@ -1,0 +1,4 @@
+{
+  "description": "made up configuration that stores a configuration variable. (this would normally be .gitignore'd)",
+  "mysql_dsn": "mysql://user:password@oh.no/secret-database"
+}
