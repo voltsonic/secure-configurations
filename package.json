@@ -1,6 +1,6 @@
 {
   "name": "secure-configurations",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "a more simple approach to securing files with keybase (or any other folder that at rest is encrypted)",
   "main": "secure-configurations.js",
   "scripts": {
@@ -21,11 +21,37 @@
     "enquirer": "^2.3.2"
   },
   "devDependencies": {
+    "badge-management": "^0.9.0",
     "lodash": "^4.17.15",
+    "version-management": "^1.0.3"
   },
   "badges": {
+    "injectors": {
+      "README.md": [
+        {
+          "definitions": [
+            "repository",
+            "version"
+          ]
+        }
       ]
     },
+    "global": {
+      "store": "scripts/badges/",
+      "badgen": {
+        "labelColor": "555",
+        "color": "blue",
+        "style": "flat",
+        "scale": "1"
+      }
+    },
+    "definitions": {
+      "version": {
+        "type": "package_version"
+      },
+      "repository": {
+        "type": "package_repository_url"
+      }
     }
   }
 }

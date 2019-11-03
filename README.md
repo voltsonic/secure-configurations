@@ -1,6 +1,9 @@
 # Secure Configurations
 
+[comment_badge_management_start]: <hidden__do_not_remove>
+[![repository badge](scripts/badges/repository.png)](https://github.com/voltsonic/secure-configurations.git) ![version badge](scripts/badges/version.png)
 
+[comment_badge_management_end]: <hidden__do_not_remove>
 
 a more simple approach to securing files with keybase (or any other folder that at rest is encrypted)
 
