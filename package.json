@@ -16,6 +16,10 @@
     "url": "https://github.com/voltsonic/secure-configurations/issues"
   },
   "homepage": "https://github.com/voltsonic/secure-configurations#readme",
+  "dependencies": {
+    "commander": "^4.0.0",
+    "enquirer": "^2.3.2"
+  },
   "devDependencies": {
     "@thebespokepixel/badges": "^2.0.1",
     "lodash": "^4.17.15",
