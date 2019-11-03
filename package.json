@@ -1,0 +1,22 @@
+{
+  "name": "secure-configurations",
+  "version": "0.0.1",
+  "description": "a more simple approach to securing files with keybase (or any other folder that at rest is encrypted)",
+  "main": "secure-configurations.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voltsonic/secure-configurations.git"
+  },
+  "author": "voltsonic",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/voltsonic/secure-configurations/issues"
+  },
+  "homepage": "https://github.com/voltsonic/secure-configurations#readme",
+  "devDependencies": {
+    "version-management": "^1.0.3"
+  }
+}
