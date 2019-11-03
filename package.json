@@ -1,6 +1,6 @@
 {
   "name": "secure-configurations",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "a more simple approach to securing files with keybase (or any other folder that at rest is encrypted)",
   "main": "secure-configurations.js",
   "scripts": {
@@ -21,5 +21,32 @@
     "lodash": "^4.17.15",
     "version-management": "^1.0.3",
     "remark": "latest"
+  },
+  "badges": {
+    "name": "secure-configurations",
+    "npm": "classynode",
+    "github": "https://github.com/voltsonic/secure-configurations",
+    "providers": {
+      "status": {
+        "text": "stable",
+        "color": "green"
+      }
+    },
+    "readme": {
+      "": [
+        [
+          "status",
+          "npm"
+        ]
+      ]
+    },
+    "docs": {
+      "": [
+        [
+          "status",
+          "npm"
+        ]
+      ]
+    }
   }
 }
