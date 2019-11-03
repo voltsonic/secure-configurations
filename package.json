@@ -21,36 +21,11 @@
     "enquirer": "^2.3.2"
   },
   "devDependencies": {
-    "@thebespokepixel/badges": "^2.0.1",
     "lodash": "^4.17.15",
-    "version-management": "^1.0.3",
-    "remark": "latest"
   },
   "badges": {
-    "name": "secure-configurations",
-    "npm": "classynode",
-    "github": "https://github.com/voltsonic/secure-configurations",
-    "providers": {
-      "status": {
-        "text": "stable",
-        "color": "green"
-      }
-    },
-    "readme": {
-      "": [
-        [
-          "status",
-          "npm"
-        ]
       ]
     },
-    "docs": {
-      "": [
-        [
-          "status",
-          "npm"
-        ]
-      ]
     }
   }
 }
