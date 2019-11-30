@@ -10,6 +10,7 @@ const path = require("path");
 const fs = require("fs");
 const program = require('commander');
 const enquirer = require('enquirer');
+const chalk = require("chalk");
 
 const packageFile = path.join(projectRoot, "package.json");
 const pkg = require(packageFile);
@@ -54,7 +55,7 @@ let runCode = (hasPermission: any) => {
         if(isIntegrity){
             Object.keys(cfgMaps).forEach(backupKeyInner => {
                 console.log('++============');
-                console.log('|| Map Key: '+backupKeyInner);
+                console.log('|| Map Key: '+chalk.bold.blueBright(backupKeyInner));
                 console.log('++============');
 
                 let backupFiles = cfgMaps[backupKeyInner].files;

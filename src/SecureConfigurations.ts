@@ -9,7 +9,8 @@ const chalk = require("chalk");
 
 let Symbols: any = {
     warning: chalk.yellowBright(figures.warning),
-    success: chalk.greenBright(figures.tick)
+    success: chalk.greenBright(figures.tick),
+    no_change: chalk.green(figures.hamburger),
 };
 
 export namespace SecureConfigurations {
@@ -88,34 +89,43 @@ export namespace SecureConfigurations {
             }
         };
 
-        const Program = (action: string, from: string, to: string) => {
+        const Program = (
+            action: string, from: string, to: string,
+            preSpace: string = ' | ',
+            innerBreak: string = ' +----------------------------'
+        ) => {
             let cfg = configuration;
             if(cfg.backupDirectory === "__MISSING__")
                 throw new Error("Backup directory is missing.");
 
             let runCopy = (read: string, write: string) => {
-                fs.mkdirSync(path.dirname(write), {recursive:true});
-                try{
-                    fs.copyFileSync(read, write);
-                }catch(e){
-                    console.log("e", e);
-                }
-                console.log('| File: '+read);
-                console.log('| \\ To: '+write);
+                if(!fs.existsSync(path.dirname(write)))
+                    fs.mkdirSync(path.dirname(write), {recursive:true});
+
+                let newFile = !fs.existsSync(write) || integrityHashFile(read) !== integrityHashFile(write);
+                if(newFile)
+                    fs.copyFileSync(read, write); // should never error since the directory is created above.
+
+                let readCore = read.replace(path.resolve(from, "."), "").substr(1);
+
+                console.log(preSpace+(newFile?Symbols.success:Symbols.no_change)+" "+readCore);
             };
 
-            console.log('+------------------------------');
-            console.log('|| Env: '+cfg.backupKey.toLocaleLowerCase());
-            console.log('|| Action: '+action);
-            console.log('+------------------------------');
+            console.log(innerBreak);
+            console.log(innerBreak);
+            console.log(preSpace+'Env: '+chalk.bold.blueBright(cfg.backupKey));
+            console.log(preSpace+'Action: '+chalk.bold.greenBright(action));
+            console.log(innerBreak);
 
             IterateFiles(from, to, runCopy, read => {
-                console.log('|> Glob: ' + read);
-                console.log('|');
+                console.log(preSpace+'> Glob: ' + read);
+                console.log(preSpace+'> From: ' + from);
+                console.log(preSpace+'>   To: ' + to);
+                console.log(preSpace);
             }, (err) => {
-                console.log('| Error: '+err);
+                console.log(preSpace+'Error: '+err);
             }, () => {
-                console.log('+------------------------------');
+                console.log(innerBreak);
             });
         };
 
@@ -215,7 +225,7 @@ export namespace SecureConfigurations {
                 }
             }
         };
-        export const Restore = () => Program("Restoring", configuration.backupDirectory, configuration.projectRoot);
-        export const Backup = () => Program("Backing Up", configuration.projectRoot, configuration.backupDirectory);
+        export const Restore = () => Program("restore", configuration.backupDirectory, configuration.projectRoot);
+        export const Backup = () => Program("backup", configuration.projectRoot, configuration.backupDirectory);
     }
 }
