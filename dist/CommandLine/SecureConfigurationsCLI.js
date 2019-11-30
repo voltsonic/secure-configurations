@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const projectRoot = process.cwd();
 const SecureConfigurations_1 = require("../SecureConfigurations");
 const scConfig = require("../../package.json");
 const path = require("path");
 const fs = require("fs");
 const program = require('commander');
 const enquirer = require('enquirer');
-let projectRoot = process.cwd();
 const packageFile = path.join(projectRoot, "package.json");
 const pkg = require(packageFile);
 if (!pkg.hasOwnProperty("secure-configurations"))
@@ -46,7 +46,8 @@ let runCode = (hasPermission) => {
                     throw new Error(`Backup files for ${backupKeyInner} is empty.`);
                 if (!fs.existsSync(backupDirectory))
                     throw new Error(`Backup directory does not exist: ${backupDirectory}`);
-                SecureConfigurations_1.SecureConfigurations.Configure({ backupKey: backupKeyInner, backupFiles, backupDirectory });
+                let Opts = { backupKey: backupKeyInner, backupFiles, backupDirectory, projectRoot };
+                SecureConfigurations_1.SecureConfigurations.Configure(Opts);
                 SecureConfigurations_1.SecureConfigurations.Run.Integrity();
                 console.log(' ');
             });
@@ -58,7 +59,7 @@ let runCode = (hasPermission) => {
                 throw new Error(`Backup files for ${backupKey} is empty.`);
             if (!fs.existsSync(backupDirectory))
                 throw new Error(`Backup directory does not exist: ${backupDirectory}`);
-            SecureConfigurations_1.SecureConfigurations.Configure({ backupKey, backupFiles, backupDirectory });
+            SecureConfigurations_1.SecureConfigurations.Configure({ backupKey, backupFiles, backupDirectory, projectRoot });
             isRestore
                 ? SecureConfigurations_1.SecureConfigurations.Run.Restore()
                 : SecureConfigurations_1.SecureConfigurations.Run.Backup();
