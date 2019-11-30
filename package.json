@@ -4,7 +4,8 @@
   "description": "a more simple approach to securing files with keybase (or any other folder that at rest is encrypted)",
   "main": "secure-configurations.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
   },
   "bin": {
     "secure-configurations": "./dist/CommandLine/SecureConfigurationsCLI.js"
@@ -20,10 +21,11 @@
   },
   "homepage": "https://github.com/voltsonic/secure-configurations#readme",
   "dependencies": {
+    "chalk": "^3.0.0",
     "commander": "^4.0.0",
     "enquirer": "^2.3.2",
-    "glob": "^7.1.6",
-    "log-symbols": "^3.0.0"
+    "figures": "^3.1.0",
+    "glob": "^7.1.6"
   },
   "devDependencies": {
     "@types/node": "^12.12.14",
