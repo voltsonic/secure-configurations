@@ -9,10 +9,7 @@ const fs = require("fs");
 const program = require('commander');
 const enquirer = require('enquirer');
 
-const moduleRoot = path.join(__dirname, "..", "..", "..");
-let projectRoot = moduleRoot;
-while(!fs.existsSync(path.join(projectRoot, "package.json")))
-    projectRoot = path.dirname(projectRoot);
+let projectRoot = process.cwd();
 
 const packageFile = path.join(projectRoot, "package.json");
 const pkg = require(packageFile);
