@@ -67,7 +67,8 @@ let runCode = (hasPermission: any) => {
                 if(!fs.existsSync(backupDirectory))
                     throw new Error(`Backup directory does not exist: ${backupDirectory}`);
 
-                let Opts = { backupKey: backupKeyInner, backupFiles, backupDirectory, projectRoot };
+                let isDefaultBackupKey = backupKeyInner === mapDefault;
+                let Opts = { backupKey: backupKeyInner, backupFiles, backupDirectory, projectRoot, isDefaultBackupKey };
                 SecureConfigurations.Configure(Opts);
 
                 SecureConfigurations.Run.Integrity();
