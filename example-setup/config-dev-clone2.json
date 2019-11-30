@@ -1,0 +1,6 @@
+{
+  "description": "a made up configuration specific to a local developer instance that stores a configuration variable.",
+  "description2": "these are generally related to a single developer in a projects local environment.",
+  "description3": "(this would normally be .gitignore'd)",
+  "mysql_dsn": "mysql://user:password@oh.no/secret-database"
+}
