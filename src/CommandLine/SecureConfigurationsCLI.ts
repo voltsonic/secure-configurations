@@ -9,9 +9,11 @@ const fs = require("fs");
 const program = require('commander');
 const enquirer = require('enquirer');
 
-// TODO: update this for real package finder.
-// const projectRoot = __dirname;
-const projectRoot = path.join(__dirname, "..", "..");
+const moduleRoot = path.join(__dirname, "..", "..", "..");
+let projectRoot = moduleRoot;
+while(!fs.existsSync(path.join(projectRoot, "package.json")))
+    projectRoot = path.dirname(projectRoot);
+
 const packageFile = path.join(projectRoot, "package.json");
 const pkg = require(packageFile);
 
