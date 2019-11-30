@@ -47,7 +47,8 @@ let runCode = (hasPermission) => {
                     throw new Error(`Backup files for ${backupKeyInner} is empty.`);
                 if (!fs.existsSync(backupDirectory))
                     throw new Error(`Backup directory does not exist: ${backupDirectory}`);
-                let Opts = { backupKey: backupKeyInner, backupFiles, backupDirectory, projectRoot };
+                let isDefaultBackupKey = backupKeyInner === mapDefault;
+                let Opts = { backupKey: backupKeyInner, backupFiles, backupDirectory, projectRoot, isDefaultBackupKey };
                 SecureConfigurations_1.SecureConfigurations.Configure(Opts);
                 SecureConfigurations_1.SecureConfigurations.Run.Integrity();
                 console.log(' ');

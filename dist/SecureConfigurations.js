@@ -7,9 +7,12 @@ const crypto = require("crypto");
 const figures = require('figures');
 const chalk = require("chalk");
 let Symbols = {
+    error: chalk.redBright(figures.cross),
     warning: chalk.yellowBright(figures.warning),
     success: chalk.greenBright(figures.tick),
     no_change: chalk.green(figures.hamburger),
+    backup: chalk.cyan(figures.arrowRight),
+    restore: chalk.cyan(figures.arrowLeft)
 };
 var SecureConfigurations;
 (function (SecureConfigurations) {
@@ -20,6 +23,7 @@ var SecureConfigurations;
     }
     let configuration = {
         integrityAlgorithm,
+        isDefaultBackupKey: false,
         projectRoot,
         backupKey: "prod",
         backupDirectory: "__MISSING__",
@@ -64,7 +68,7 @@ var SecureConfigurations;
                 afterEachFile();
             }
         };
-        const Program = (action, from, to, preSpace = ' | ', innerBreak = ' +----------------------------') => {
+        const Program = (action, from, to, preSpace = ' | ', innerBreakHeader = '++============', innerBreakHeaderLine = '| ', innerBreak = ' +----------------------------') => {
             let cfg = configuration;
             if (cfg.backupDirectory === "__MISSING__")
                 throw new Error("Backup directory is missing.");
@@ -77,11 +81,10 @@ var SecureConfigurations;
                 let readCore = read.replace(path.resolve(from, "."), "").substr(1);
                 console.log(preSpace + (newFile ? Symbols.success : Symbols.no_change) + " " + readCore);
             };
-            console.log(innerBreak);
-            console.log(innerBreak);
-            console.log(preSpace + 'Env: ' + chalk.bold.blueBright(cfg.backupKey));
-            console.log(preSpace + 'Action: ' + chalk.bold.greenBright(action));
-            console.log(innerBreak);
+            console.log(innerBreakHeader);
+            console.log(innerBreakHeaderLine + 'Env: ' + chalk.bold.blueBright(cfg.backupKey));
+            console.log(innerBreakHeaderLine + 'Action: ' + chalk.bold.greenBright(action));
+            console.log(innerBreakHeader);
             IterateFiles(from, to, runCopy, read => {
                 console.log(preSpace + '> Glob: ' + read);
                 console.log(preSpace + '> From: ' + from);
@@ -130,8 +133,6 @@ var SecureConfigurations;
             }
             else {
                 let commandsRunning = [];
-                let maxKeyLen = sortKeys.sort((a, b) => (b.length - a.length))[0].length;
-                console.log(preSpace);
                 for (let key of sortKeys) {
                     let n = fileChecks[key];
                     let pass = n.backupHash === n.restoreHash;
@@ -145,20 +146,23 @@ var SecureConfigurations;
                             a.push("(" + Symbols.warning + " Missing on Backup)");
                         if (missingRestore)
                             a.push("(" + Symbols.warning + " Missing on Restore)");
-                        if (a.length > 0)
-                            a.unshift("");
-                        let spaces = maxKeyLen - key.length;
-                        console.log(preSpace + figures.error + " " + key + (spaces > 0 ? (" ".repeat(spaces)) : "") + (a.join(" ")));
                         let shouldBackup = backupM < restoreM;
                         let recommendFlag = shouldBackup
                             ? "backup"
                             : "restore";
+                        let symbolAction = shouldBackup
+                            ? Symbols.backup
+                            : Symbols.restore;
                         if (!missingBackup && !missingRestore) {
-                            console.log(preSpace + ' Backup: ' + (shouldBackup ? Symbols.warning : Symbols.success) + ' ' + n.backup + ' @ ' + backupM);
-                            console.log(preSpace + 'Project: ' + (shouldBackup ? Symbols.success : Symbols.warning) + ' ' + n.backup + ' @ ' + restoreM);
-                            console.log(innerBreak);
+                            a.push(shouldBackup
+                                ? chalk.blueBright("(Backup)")
+                                : chalk.greenBright("(Restore)"));
                         }
-                        let commandRun = `secure-configurations -m ${backupKey} --${recommendFlag}`;
+                        if (a.length > 0)
+                            a.unshift("");
+                        console.log(preSpace + symbolAction + " " + key + (a.join(" ")));
+                        let commandM = configuration.isDefaultBackupKey ? "" : ` -m ${backupKey}`;
+                        let commandRun = `secure-configurations${commandM} --${recommendFlag}`;
                         if (commandsRunning.indexOf(commandRun) < 0)
                             commandsRunning.push(commandRun);
                     }

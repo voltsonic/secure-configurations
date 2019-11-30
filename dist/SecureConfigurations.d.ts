@@ -3,14 +3,16 @@ export declare namespace SecureConfigurations {
         namespace Configuration {
             interface All {
                 integrityAlgorithm: string;
+                isDefaultBackupKey: boolean;
                 projectRoot: string;
                 backupKey: string;
                 backupDirectory: string;
                 backupFiles: string[];
             }
             interface Merge {
-                projectRoot?: string;
                 integrityAlgorithm?: string;
+                isDefaultBackupKey?: boolean;
+                projectRoot?: string;
                 backupKey: string;
                 backupDirectory: string;
                 backupFiles: string[];
