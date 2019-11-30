@@ -81,7 +81,7 @@ let runCode = (hasPermission: any) => {
             if(!fs.existsSync(backupDirectory))
                 throw new Error(`Backup directory does not exist: ${backupDirectory}`);
 
-            SecureConfigurations.Configure({ backupKey, backupFiles, backupDirectory });
+            SecureConfigurations.Configure({ backupKey, backupFiles, backupDirectory, projectRoot });
 
             isRestore
                 ?SecureConfigurations.Run.Restore()
