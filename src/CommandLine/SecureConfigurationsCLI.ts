@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 "use strict";
 
+const projectRoot = process.cwd();
+
 import {SecureConfigurations} from "../SecureConfigurations";
 
 const scConfig = require("../../package.json");
@@ -8,8 +10,6 @@ const path = require("path");
 const fs = require("fs");
 const program = require('commander');
 const enquirer = require('enquirer');
-
-let projectRoot = process.cwd();
 
 const packageFile = path.join(projectRoot, "package.json");
 const pkg = require(packageFile);
@@ -62,10 +62,12 @@ let runCode = (hasPermission: any) => {
 
                 if(backupFiles.length <= 0)
                     throw new Error(`Backup files for ${backupKeyInner} is empty.`);
+
                 if(!fs.existsSync(backupDirectory))
                     throw new Error(`Backup directory does not exist: ${backupDirectory}`);
 
-                SecureConfigurations.Configure({ backupKey: backupKeyInner, backupFiles, backupDirectory });
+                let Opts = { backupKey: backupKeyInner, backupFiles, backupDirectory, projectRoot };
+                SecureConfigurations.Configure(Opts);
 
                 SecureConfigurations.Run.Integrity();
                 console.log(' ');

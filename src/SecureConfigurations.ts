@@ -83,7 +83,8 @@ export namespace SecureConfigurations {
         };
 
         const Program = (action: string, from: string, to: string) => {
-            if(configuration.backupDirectory === "__MISSING__")
+            let cfg = configuration;
+            if(cfg.backupDirectory === "__MISSING__")
                 throw new Error("Backup directory is missing.");
 
             let runCopy = (read: string, write: string) => {
@@ -98,7 +99,7 @@ export namespace SecureConfigurations {
             };
 
             console.log('+------------------------------');
-            console.log('|| Env: '+configuration.backupKey.toLocaleLowerCase());
+            console.log('|| Env: '+cfg.backupKey.toLocaleLowerCase());
             console.log('|| Action: '+action);
             console.log('+------------------------------');
 
@@ -113,19 +114,24 @@ export namespace SecureConfigurations {
         };
 
         const integrityHashFile = (fileSrc: string): string => {
+            let cfg = configuration;
             if(!fs.existsSync(fileSrc)) return "";
-            const h = crypto.createHash(configuration.integrityAlgorithm);
+            const h = crypto.createHash(cfg.integrityAlgorithm);
             h.setEncoding("hex");
             h.write(fs.readFileSync(fileSrc, "utf8")); // TODO: build encoding detection in.
             h.end();
             return h.read();
         };
 
-        export const Integrity = () => {
+        export const Integrity = (
+            preSpace: string = ' | ',
+            innerBreak: string = ' +----------------------------'
+        ) => {
             let fileChecks: any = {};
-            let backupKey = configuration.backupKey;
+            let cfg = configuration;
+            let backupKey = cfg.backupKey;
 
-            IterateFiles(configuration.backupDirectory, configuration.projectRoot, (fileRead, fileWrite, fileRelative) => {
+            IterateFiles(cfg.backupDirectory, cfg.projectRoot, (fileRead, fileWrite, fileRelative) => {
                 fileChecks[fileRelative] = {
                     backup: fileRead,
                     backupHash: integrityHashFile(fileRead),
@@ -134,7 +140,7 @@ export namespace SecureConfigurations {
                 };
             });
 
-            IterateFiles(configuration.projectRoot, configuration.backupDirectory, (fileRead, fileWrite, fileRelative) => {
+            IterateFiles(cfg.projectRoot, cfg.backupDirectory, (fileRead, fileWrite, fileRelative) => {
                 if(!fileChecks.hasOwnProperty(fileRelative))
                     fileChecks[fileRelative] = {
                         backup: fileWrite,
@@ -147,8 +153,11 @@ export namespace SecureConfigurations {
             let sortKeys = Object.keys(fileChecks);
 
             if(sortKeys.length === 0){
-                console.log("| No Files Found?");
+                console.log(preSpace+"No Files Found?");
             }else{
+                let commandsRunning: string[] = [];
+                let maxKeyLen: number = sortKeys.sort((a: string, b: string) => (b.length - a.length))[0].length;
+                console.log(preSpace);
                 for(let key of sortKeys){
                     let n = fileChecks[key];
                     let pass = n.backupHash === n.restoreHash;
@@ -167,25 +176,36 @@ export namespace SecureConfigurations {
                         if(a.length > 0)
                             a.unshift("");
 
-                        console.log(logSymbols.error+" "+key+(a.join(" ")));
+                        let spaces = maxKeyLen - key.length;
+                        console.log(preSpace+logSymbols.error+" "+key+(spaces>0?(" ".repeat(spaces)):"")+(a.join(" ")));
 
                         let shouldBackup = backupM < restoreM;
                         let recommendFlag = shouldBackup
                             ?"backup"
                             :"restore";
+
                         if(!missingBackup && !missingRestore){
-                            let recommend = shouldBackup
-                                ?"Backup"
-                                :"Restore";
-                            console.log('|  Backup: '+(shouldBackup?logSymbols.warning:logSymbols.success)+' '+n.backup+' @ '+backupM);
-                            console.log('| Project: '+(shouldBackup?logSymbols.success:logSymbols.warning)+' '+n.backup+' @ '+restoreM);
-                            console.log('|');
-                            console.log('| Run ~*'+recommend+'*~');
+                            console.log(preSpace+' Backup: '+(shouldBackup?logSymbols.warning:logSymbols.success)+' '+n.backup+' @ '+backupM);
+                            console.log(preSpace+'Project: '+(shouldBackup?logSymbols.success:logSymbols.warning)+' '+n.backup+' @ '+restoreM);
+                            console.log(innerBreak);
                         }
-                        console.log(`| \\ secure-configurations -m ${backupKey} --${recommendFlag}`);
-                        console.log('+----------------------------');
+
+                        let commandRun = `secure-configurations -m ${backupKey} --${recommendFlag}`;
+                        if(commandsRunning.indexOf(commandRun) < 0)
+                            commandsRunning.push(commandRun);
                     }else
-                        console.log(logSymbols.success+" "+key);
+                        console.log(preSpace+logSymbols.success+" "+key);
+                }
+                if(commandsRunning.length > 1){
+                    console.log(preSpace);
+                    console.log(preSpace+'Recommended: Manual Check - Configs seem to need to be backed up and restored.');
+                    console.log(preSpace);
+                    console.log(innerBreak);
+                }else if(commandsRunning.length === 1){
+                    console.log(preSpace);
+                    console.log(preSpace+commandsRunning[0]);
+                    console.log(preSpace);
+                    console.log(innerBreak);
                 }
             }
         };
