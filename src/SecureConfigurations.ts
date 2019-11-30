@@ -4,7 +4,13 @@ const glob = require("glob");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
-const logSymbols = require('log-symbols');
+const figures = require('figures');
+const chalk = require("chalk");
+
+let Symbols: any = {
+    warning: chalk.yellowBright(figures.warning),
+    success: chalk.greenBright(figures.tick)
+};
 
 export namespace SecureConfigurations {
     export namespace Interfaces {
@@ -170,14 +176,14 @@ export namespace SecureConfigurations {
 
                         let a: string[] = [];
 
-                        if(missingBackup) a.push("("+logSymbols.warning+" Missing on Backup)");
-                        if(missingRestore) a.push("("+logSymbols.warning+" Missing on Restore)");
+                        if(missingBackup) a.push("("+Symbols.warning+" Missing on Backup)");
+                        if(missingRestore) a.push("("+Symbols.warning+" Missing on Restore)");
 
                         if(a.length > 0)
                             a.unshift("");
 
                         let spaces = maxKeyLen - key.length;
-                        console.log(preSpace+logSymbols.error+" "+key+(spaces>0?(" ".repeat(spaces)):"")+(a.join(" ")));
+                        console.log(preSpace+figures.error+" "+key+(spaces>0?(" ".repeat(spaces)):"")+(a.join(" ")));
 
                         let shouldBackup = backupM < restoreM;
                         let recommendFlag = shouldBackup
@@ -185,8 +191,8 @@ export namespace SecureConfigurations {
                             :"restore";
 
                         if(!missingBackup && !missingRestore){
-                            console.log(preSpace+' Backup: '+(shouldBackup?logSymbols.warning:logSymbols.success)+' '+n.backup+' @ '+backupM);
-                            console.log(preSpace+'Project: '+(shouldBackup?logSymbols.success:logSymbols.warning)+' '+n.backup+' @ '+restoreM);
+                            console.log(preSpace+' Backup: '+(shouldBackup?Symbols.warning:Symbols.success)+' '+n.backup+' @ '+backupM);
+                            console.log(preSpace+'Project: '+(shouldBackup?Symbols.success:Symbols.warning)+' '+n.backup+' @ '+restoreM);
                             console.log(innerBreak);
                         }
 
@@ -194,7 +200,7 @@ export namespace SecureConfigurations {
                         if(commandsRunning.indexOf(commandRun) < 0)
                             commandsRunning.push(commandRun);
                     }else
-                        console.log(preSpace+logSymbols.success+" "+key);
+                        console.log(preSpace+Symbols.success+" "+key);
                 }
                 if(commandsRunning.length > 1){
                     console.log(preSpace);
