@@ -94,7 +94,7 @@ if(program.config){
                             }
                         })()
                         // Setup New
-                        :cfgMaps[mapKey] = mergeConfig.maps[mapKey];
+                        :(cfgMaps[mapKey] = mergeConfig.maps[mapKey]);
                 });
         }
     }
