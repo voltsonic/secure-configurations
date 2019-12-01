@@ -87,9 +87,11 @@ if(program.config){
                         ?(() => {
                             if(mergeConfig.maps[mapKey].directory)
                                 cfgMaps[mapKey].directory = mergeConfig.maps[mapKey].directory;
-                            if(mergeConfig.maps[mapKey].files)
+                            if(mergeConfig.maps[mapKey].files){
                                 for(let f of mergeConfig.maps[mapKey].files)
                                     cfgMaps[mapKey].files.push(f);
+                                cfgMaps[mapKey].files.sort();
+                            }
                         })()
                         // Setup New
                         :cfgMaps[mapKey] = mergeConfig.maps[mapKey];
