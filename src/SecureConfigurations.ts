@@ -147,6 +147,7 @@ export namespace SecureConfigurations {
         };
 
         export const Integrity = (
+            configsLoaded: null|string[],
             preSpace: string = ' | ',
             innerBreak: string = ' +----------------------------'
         ) => {
@@ -217,6 +218,9 @@ export namespace SecureConfigurations {
 
                         let commandM = configuration.isDefaultBackupKey?"":` -m ${backupKey}`;
                         let commandRun = `secure-configurations${commandM} --${recommendFlag}`;
+                        if(typeof configsLoaded === "object")
+                            for(let cfgLoaded of configsLoaded)
+                                commandRun += ` --config ${cfgLoaded}`;
                         if(commandsRunning.indexOf(commandRun) < 0)
                             commandsRunning.push(commandRun);
                     }else

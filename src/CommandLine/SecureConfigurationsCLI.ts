@@ -122,7 +122,7 @@ let runCode = (hasPermission: any) => {
                 let Opts = { backupKey: backupKeyInner, backupFiles, backupDirectory, projectRoot, isDefaultBackupKey };
                 SecureConfigurations.Configure(Opts);
 
-                SecureConfigurations.Run.Integrity();
+                SecureConfigurations.Run.Integrity(program.config);
                 console.log(' ');
             });
         }else{
