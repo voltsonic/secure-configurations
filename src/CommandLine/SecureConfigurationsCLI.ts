@@ -31,9 +31,14 @@ let mapDefault = mapKeys[0];
 program
     .version("v"+scConfig.version)
     .description("SecureConfigurations Command-Line Interface - v"+scConfig.version+" - Integrity Check is run by default (without Backup/Restore flags) and is recommended to run before Backup/Restore.")
-    .option("-m, --map-key <map-key>", "Map key to backup/restore ["+mapKeys.sort().map(m => ((m === mapDefault?"*":"")+m)).join(", ")+"] * default.", mapDefault)
+    .option("-m, --map-key <map-key>", "Map key to backup/restore ["+mapKeys.sort().map(m => ((m === mapDefault?"*":"")+m)).join(", ")+"] * default (does not include custom --config).", mapDefault)
     .option("-r, --restore", "Restore files.")
     .option("-b, --backup", "Backup files.")
+    .option("-c, --config <load-config>", "Load configs (multiple allowed, loaded in order).", (_new: any, previous: any) => {
+        if(!previous) previous = [];
+        previous.push(_new);
+        return previous;
+    })
     .option('-f, --force-run', 'Ignore verification of backup/restore.')
 ;
 
@@ -46,6 +51,52 @@ if(isBackup && isRestore)
     throw new Error("Cannot backup and restore at same time.");
 
 let isIntegrity = !isBackup && !isRestore;
+
+namespace Interfaces {
+    export namespace PackageConfiguration {
+        export interface All {
+            maps: {
+                [mapKey: string]: {
+                    files: string[],
+                    directory?: string
+                }
+            }
+        }
+        export interface Merge {
+            maps?: {
+                [mapKey: string]: {
+                    files?: string[],
+                    directory?: string
+                }
+            }
+        }
+    }
+}
+
+// Inject custom.
+if(program.config){
+    let cf: string;
+    for(let c of program.config){
+        cf = path.resolve(projectRoot, c);
+        if(fs.existsSync(cf)){
+            let mergeConfig: Interfaces.PackageConfiguration.Merge = JSON.parse(fs.readFileSync(cf));
+            if(mergeConfig.maps)
+                Object.keys(mergeConfig.maps).forEach((mapKey: string) => {
+                    cfgMaps.hasOwnProperty(mapKey)
+                        // Overwrite/Append
+                        ?(() => {
+                            if(mergeConfig.maps[mapKey].directory)
+                                cfgMaps[mapKey].directory = mergeConfig.maps[mapKey].directory;
+                            if(mergeConfig.maps[mapKey].files)
+                                for(let f of mergeConfig.maps[mapKey].files)
+                                    cfgMaps[mapKey].files.push(f);
+                        })()
+                        // Setup New
+                        :cfgMaps[mapKey] = mergeConfig.maps[mapKey];
+                });
+        }
+    }
+}
 
 let action = isRestore ? "restore" : (isIntegrity ? "integrity" : "backup");
 let backupKey = program.mapKey || mapDefault;
