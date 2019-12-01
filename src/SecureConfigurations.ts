@@ -4,6 +4,9 @@ const glob = require("glob");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
+const Diff = require("diff");
+
+// TODO: moving to CLI
 const figures = require('figures');
 const chalk = require("chalk");
 
@@ -21,7 +24,6 @@ export namespace SecureConfigurations {
         export namespace Configuration {
             export interface All {
                 integrityAlgorithm: string,
-                isDefaultBackupKey: boolean,
                 projectRoot: string,
                 backupKey: string,
                 backupDirectory: string,
@@ -29,11 +31,39 @@ export namespace SecureConfigurations {
             }
             export interface Merge {
                 integrityAlgorithm?: string,
-                isDefaultBackupKey?: boolean,
                 projectRoot?: string,
                 backupKey: string,
                 backupDirectory: string,
                 backupFiles: string[]
+            }
+        }
+        export namespace Integrity {
+            export interface DiffInterface {
+                count: number,
+                value: string,
+                added?: true,
+                removed?: true
+            }
+            export interface IntegrityItemInterface {
+                fileRelative: string,
+                backup: {
+                    file: string,
+                    hash: string,
+                    lastModified: null|number,
+                    missing: boolean,
+                },
+                diff?: DiffInterface[],
+                project: {
+                    file: string,
+                    hash: string,
+                    lastModified: null|number,
+                    missing: boolean,
+                }
+            }
+
+            export interface IntegrityInterface {
+                recommendedActions: string[],
+                files: IntegrityItemInterface[]
             }
         }
     }
@@ -46,7 +76,6 @@ export namespace SecureConfigurations {
 
     let configuration: Interfaces.Configuration.All = {
         integrityAlgorithm,
-        isDefaultBackupKey: false,
         projectRoot,
         backupKey: "prod",
         backupDirectory: "__MISSING__",
@@ -157,13 +186,11 @@ export namespace SecureConfigurations {
         };
 
         export const Integrity = (
-            configsLoaded: null|string[],
-            preSpace: string = ' | ',
-            innerBreak: string = ' +----------------------------'
+            cbIntegrity: (integritys: Interfaces.Integrity.IntegrityInterface) => void,
+            cbRejected: (error: string) => void
         ) => {
             let fileChecks: any = {};
             let cfg = configuration;
-            let backupKey = cfg.backupKey;
 
             IterateFiles(cfg.backupDirectory, cfg.projectRoot, (fileRead, fileWrite, fileRelative) => {
                 fileChecks[fileRelative] = {
@@ -186,69 +213,71 @@ export namespace SecureConfigurations {
 
             let sortKeys = Object.keys(fileChecks).sort();
 
-            if(sortKeys.length === 0){
-                console.log(preSpace+"No Files Found?");
-            }else{
-                let commandsRunning: string[] = [];
-                for(let key of sortKeys){
+            if(sortKeys.length === 0)
+                cbRejected("No files found with current configuration.");
+            else{
+                let r: Interfaces.Integrity.IntegrityInterface = {
+                    recommendedActions: [],
+                    files: []
+                };
+
+                let nextSortKey = () => {
+                    if(sortKeys.length === 0){
+                        r.files.sort((
+                            a: Interfaces.Integrity.IntegrityItemInterface,
+                            b: Interfaces.Integrity.IntegrityItemInterface) => a.fileRelative.localeCompare(b.fileRelative));
+                        cbIntegrity(r);
+                        return;
+                    }
+
+                    let key = sortKeys.shift();
+
                     let n = fileChecks[key];
                     let pass = n.backupHash === n.restoreHash;
-                    if(!pass){
-                        let backupM = fs.existsSync(n.backup)?fs.statSync(n.backup).mtime:-1;
-                        let restoreM = fs.existsSync(n.restore)?fs.statSync(n.restore).mtime:-1;
 
-                        let missingBackup = backupM < 0;
-                        let missingRestore = restoreM < 0;
+                    let backupM = fs.existsSync(n.backup)?fs.statSync(n.backup).mtime:null;
+                    let restoreM = fs.existsSync(n.restore)?fs.statSync(n.restore).mtime:null;
 
-                        let a: string[] = [];
-
-                        if(missingBackup) a.push("("+Symbols.warning+" Missing on Backup)");
-                        if(missingRestore) a.push("("+Symbols.warning+" Missing on Restore)");
-
-                        let shouldBackup = backupM < restoreM;
-                        let recommendFlag = shouldBackup
-                            ?"backup"
-                            :"restore";
-                        let symbolAction = shouldBackup
-                            ?Symbols.backup
-                            :Symbols.restore;
-
-                        if(!missingBackup && !missingRestore){
-                            a.push(
-                                shouldBackup
-                                    ?chalk.blueBright("(Backup)")
-                                    :chalk.greenBright("(Restore)")
-                            );
+                    r.files.push({
+                        fileRelative: key,
+                        backup: {
+                            file: n.backup,
+                            hash: n.backupHash,
+                            lastModified: backupM,
+                            missing: !backupM,
+                        },
+                        project: {
+                            file: n.restore,
+                            hash: n.restoreHash,
+                            lastModified: restoreM,
+                            missing: !restoreM,
                         }
+                    });
 
-                        if(a.length > 0)
-                            a.unshift("");
+                    let meIndex = (r.files.length - 1);
 
-                        console.log(preSpace+symbolAction+" "+key+(a.join(" ")));
+                    if(!pass){
+                        if(!backupM) backupM = -1;
+                        if(!restoreM) restoreM = -1;
 
-                        let commandM = configuration.isDefaultBackupKey?"":` -m ${backupKey}`;
-                        let commandRun = `secure-configurations${commandM} --${recommendFlag}`;
-                        if(typeof configsLoaded === "object")
-                            for(let cfgLoaded of configsLoaded)
-                                commandRun += ` --config ${cfgLoaded}`;
-                        if(commandsRunning.indexOf(commandRun) < 0)
-                            commandsRunning.push(commandRun);
-                    }else
-                        console.log(preSpace+Symbols.success+" "+key);
-                }
-                if(commandsRunning.length > 1){
-                    console.log(preSpace);
-                    console.log(preSpace+'Recommended: Manual Check - Configs seem to need to be backed up and restored.');
-                    console.log(preSpace);
-                    console.log(innerBreak);
-                }else if(commandsRunning.length === 1){
-                    console.log(preSpace);
-                    console.log(preSpace+commandsRunning[0]);
-                    console.log(preSpace);
-                    console.log(innerBreak);
-                }
+                        let recommendedAction = (backupM < restoreM)?"backup":"restore";
+                        if(r.recommendedActions.indexOf(recommendedAction) < 0)
+                            r.recommendedActions.push(recommendedAction);
+                    }
+
+                    if(!r.files[meIndex].backup.missing && !r.files[meIndex].project.missing && !pass){
+                        r.files[meIndex].diff = Diff.diffLines(
+                            fs.readFileSync(r.files[meIndex].backup.file, "utf8"),
+                            fs.readFileSync(r.files[meIndex].project.file, "utf8"));
+                    }
+
+                    nextSortKey();
+                };
+
+                nextSortKey();
             }
         };
+
         export const Restore = () => Program("restore", configuration.backupDirectory, configuration.projectRoot);
         export const Backup = () => Program("backup", configuration.projectRoot, configuration.backupDirectory);
     }
