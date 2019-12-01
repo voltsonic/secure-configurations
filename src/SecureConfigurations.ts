@@ -75,6 +75,8 @@ export namespace SecureConfigurations {
             if(typeof cbError !== "function") cbError = (error) => {};
             if(typeof afterEachFile !== "function") afterEachFile = () => {};
 
+            let scanFiles = [];
+
             for(let file of configuration.backupFiles){
                 let read = path.join(from, file);
                 let write = path.join(to, file);
@@ -85,12 +87,20 @@ export namespace SecureConfigurations {
                         for (let readGlob of globCheck){
                             readGlob = path.resolve(readGlob, '.');
                             let writeGlob = writeBase+readGlob.replace(readBase, "");
-                            cbFile(readGlob, writeGlob, readGlob.replace(readBase, "").substr(1));
+                            scanFiles.push([readGlob, writeGlob, readGlob.replace(readBase, "").substr(1)]);
+                            // cbFile(readGlob, writeGlob, readGlob.replace(readBase, "").substr(1));
                         }
                     } else
                         cbError('File does not exist ('+read+')');
                 }else
-                    cbFile(read, write, write.replace(writeBase, "").substr(1));
+                    scanFiles.push([read, write, write.replace(writeBase, "").substr(1)]);
+                    // cbFile(read, write, write.replace(writeBase, "").substr(1));
+            }
+
+            scanFiles.sort((a: any, b: any) => a[2].localeCompare(b[2]));
+
+            for(let pta of scanFiles){
+                cbFile(pta[0], pta[1], pta[2]);
                 afterEachFile();
             }
         };
@@ -174,7 +184,7 @@ export namespace SecureConfigurations {
                     };
             });
 
-            let sortKeys = Object.keys(fileChecks);
+            let sortKeys = Object.keys(fileChecks).sort();
 
             if(sortKeys.length === 0){
                 console.log(preSpace+"No Files Found?");
