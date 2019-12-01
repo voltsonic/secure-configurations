@@ -1,0 +1,3 @@
+{
+  "description": "I am a weird non-standard configuration file to show how defining paths works for a dev config (only analyzed/copied with --config gitignored-config.json added to the cli operation)."
+}

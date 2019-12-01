@@ -1,0 +1,21 @@
+{
+  "secure-configurations": {
+    "maps": {
+      "prod": {
+        "files": [
+          "config.json",
+          "prod/odd-configuration.json"
+        ],
+        "directory": "C:\\tmp\\test_backup_project\\prod"
+      },
+      "dev": {
+        "files": [
+          "config-dev.json",
+          "config-dev-*.json",
+          "dev/odd-configuration-dev.json"
+        ],
+        "directory": "C:\\tmp\\test_backup_project\\dev"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "maps": {
+    "prod": {
+      "directory": "C:\\tmp\\test_backup_project\\prod_alt"
+    },
+    "dev": {
+      "files": [
+        "random_path/dev/super-odd-configuration-dev.json"
+      ]
+    }
+  }
+}
