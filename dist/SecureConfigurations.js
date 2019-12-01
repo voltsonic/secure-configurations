@@ -106,7 +106,7 @@ var SecureConfigurations;
             h.end();
             return h.read();
         };
-        Run.Integrity = (preSpace = ' | ', innerBreak = ' +----------------------------') => {
+        Run.Integrity = (configsLoaded, preSpace = ' | ', innerBreak = ' +----------------------------') => {
             let fileChecks = {};
             let cfg = configuration;
             let backupKey = cfg.backupKey;
@@ -163,6 +163,9 @@ var SecureConfigurations;
                         console.log(preSpace + symbolAction + " " + key + (a.join(" ")));
                         let commandM = configuration.isDefaultBackupKey ? "" : ` -m ${backupKey}`;
                         let commandRun = `secure-configurations${commandM} --${recommendFlag}`;
+                        if (typeof configsLoaded === "object")
+                            for (let cfgLoaded of configsLoaded)
+                                commandRun += ` --config ${cfgLoaded}`;
                         if (commandsRunning.indexOf(commandRun) < 0)
                             commandsRunning.push(commandRun);
                     }

@@ -21,7 +21,7 @@ export declare namespace SecureConfigurations {
     }
     const Configure: (to: Interfaces.Configuration.Merge) => void;
     namespace Run {
-        const Integrity: (preSpace?: string, innerBreak?: string) => void;
+        const Integrity: (configsLoaded: string[], preSpace?: string, innerBreak?: string) => void;
         const Restore: () => void;
         const Backup: () => void;
     }

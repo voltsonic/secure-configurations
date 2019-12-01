@@ -52,9 +52,11 @@ if (program.config) {
                         ? (() => {
                             if (mergeConfig.maps[mapKey].directory)
                                 cfgMaps[mapKey].directory = mergeConfig.maps[mapKey].directory;
-                            if (mergeConfig.maps[mapKey].files)
+                            if (mergeConfig.maps[mapKey].files) {
                                 for (let f of mergeConfig.maps[mapKey].files)
                                     cfgMaps[mapKey].files.push(f);
+                                cfgMaps[mapKey].files.sort();
+                            }
                         })()
                         // Setup New
                         : cfgMaps[mapKey] = mergeConfig.maps[mapKey];
@@ -80,7 +82,7 @@ let runCode = (hasPermission) => {
                 let isDefaultBackupKey = backupKeyInner === mapDefault;
                 let Opts = { backupKey: backupKeyInner, backupFiles, backupDirectory, projectRoot, isDefaultBackupKey };
                 SecureConfigurations_1.SecureConfigurations.Configure(Opts);
-                SecureConfigurations_1.SecureConfigurations.Run.Integrity();
+                SecureConfigurations_1.SecureConfigurations.Run.Integrity(program.config);
                 console.log(' ');
             });
         }
