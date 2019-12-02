@@ -93,19 +93,20 @@ let runCode = (hasPermission) => {
     if (hasPermission) {
         let innerBreakHeader = '++============';
         let innerBreakHeaderLine = '|| ';
-        let preSpace = ' +----------------------------';
+        let preSpace = ' +------------';
         let preSpaceLine = ' | ';
         if (isIntegrity) {
             let configMapKeys = Object.keys(cfgMaps);
             let isFirstConfigMap = true;
             let nextConfigMap = () => {
                 if (configMapKeys.length === 0) {
-                    console.log(preSpaceLine);
                     console.log(preSpace);
                     return;
                 }
                 if (!isFirstConfigMap)
                     console.log(' ');
+                else
+                    isFirstConfigMap = false;
                 let backupKeyInner = configMapKeys.shift();
                 console.log(innerBreakHeader);
                 console.log(innerBreakHeaderLine + 'Map Key: ' + chalk.bold.blueBright(backupKeyInner));
@@ -169,16 +170,20 @@ let runCode = (hasPermission) => {
                             configExtras = program.config.map((v) => (`--config ${v}`));
                             configExtras.unshift("");
                         }
-                        console.log(preSpaceLine + `secure-configurations --${integritys.recommendedActions[0]}${configExtras.join(" ")}`);
+                        console.log(preSpaceLine + `secure-configurations --map-key ${backupKeyInner} --${integritys.recommendedActions[0]}${configExtras.join(" ")}`);
+                        console.log(preSpaceLine);
                     }
-                    integritys.recommendedActions;
+                    else
+                        console.log(preSpaceLine);
                     nextConfigMap();
                 }, error => {
                     console.log(' | ' + error);
+                    console.log(preSpaceLine);
+                    console.log(preSpace);
                     nextConfigMap();
                 });
-                isFirstConfigMap = false;
             };
+            // First Run
             nextConfigMap();
         }
         else {
@@ -198,12 +203,12 @@ let runCode = (hasPermission) => {
                 },
                 header: (isBackup = true) => {
                     return (mapKey, action) => {
-                        mapKey = isBackup
-                            ? chalk.bold.greenBright(mapKey)
-                            : chalk.bold.blueBright(mapKey);
+                        action = isBackup
+                            ? chalk.bold.greenBright(action)
+                            : chalk.bold.blueBright(action);
                         console.log(innerBreakHeader);
-                        console.log(innerBreakHeaderLine + 'Map Key: ' + mapKey);
-                        console.log(innerBreakHeaderLine + 'Action: ' + chalk.bold.greenBright(action));
+                        console.log(innerBreakHeaderLine + 'Map Key: ' + chalk.bold.blueBright(mapKey));
+                        console.log(innerBreakHeaderLine + 'Action: ' + action);
                         console.log(innerBreakHeader);
                         console.log(preSpaceLine);
                     };
