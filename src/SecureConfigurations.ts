@@ -6,19 +6,6 @@ const fs = require("fs");
 const crypto = require("crypto");
 const Diff = require("diff");
 
-// TODO: moving to CLI
-const figures = require('figures');
-const chalk = require("chalk");
-
-let Symbols: any = {
-    error: chalk.redBright(figures.cross),
-    warning: chalk.yellowBright(figures.warning),
-    success: chalk.greenBright(figures.tick),
-    no_change: chalk.green(figures.hamburger),
-    backup: chalk.cyan(figures.arrowRight),
-    restore: chalk.cyan(figures.arrowLeft)
-};
-
 export namespace SecureConfigurations {
     export namespace Interfaces {
         export namespace Configuration {
@@ -91,18 +78,17 @@ export namespace SecureConfigurations {
     };
     
     export namespace Run {
+        type CallbackHeader = (mapKey: string, action: string) => void;
+        type CallbackFile = (isNew: boolean, isWrite: boolean, pathRelative: string) => void;
+        type CallbackError = (error: any) => void;
+
         const IterateFiles = (from: string, to: string,
                               cbFile: (fileRead: string, fileWrite: string, fileRelative: string) => void,
-                              cbIsGlob?: (readGlob: string) => void,
-                              cbError?: (error: any) => void,
-                              afterEachFile?: () => void
-        ) => {
+                              cbError?: CallbackError) => {
             let readBase = path.resolve(from, '.');
             let writeBase = path.resolve(to, '.');
 
-            if(typeof cbIsGlob !== "function") cbIsGlob = (readGlob) => {};
             if(typeof cbError !== "function") cbError = (error) => {};
-            if(typeof afterEachFile !== "function") afterEachFile = () => {};
 
             let scanFiles = [];
 
@@ -112,34 +98,29 @@ export namespace SecureConfigurations {
                 if(!fs.existsSync(read)){
                     let globCheck = glob.sync(read);
                     if(globCheck.length > 0) {
-                        cbIsGlob(read);
                         for (let readGlob of globCheck){
                             readGlob = path.resolve(readGlob, '.');
                             let writeGlob = writeBase+readGlob.replace(readBase, "");
                             scanFiles.push([readGlob, writeGlob, readGlob.replace(readBase, "").substr(1)]);
-                            // cbFile(readGlob, writeGlob, readGlob.replace(readBase, "").substr(1));
                         }
                     } else
                         cbError('File does not exist ('+read+')');
                 }else
                     scanFiles.push([read, write, write.replace(writeBase, "").substr(1)]);
-                    // cbFile(read, write, write.replace(writeBase, "").substr(1));
             }
 
             scanFiles.sort((a: any, b: any) => a[2].localeCompare(b[2]));
 
             for(let pta of scanFiles){
                 cbFile(pta[0], pta[1], pta[2]);
-                afterEachFile();
             }
         };
 
         const Program = (
+            cbHeader: CallbackHeader,
+            cbFile: CallbackFile,
             action: string, from: string, to: string,
-            preSpace: string = ' | ',
-            innerBreakHeader: string = '++============',
-            innerBreakHeaderLine: string = '| ',
-            innerBreak: string = ' +----------------------------'
+            cbError?: CallbackError
         ) => {
             let cfg = configuration;
             if(cfg.backupDirectory === "__MISSING__")
@@ -149,30 +130,17 @@ export namespace SecureConfigurations {
                 if(!fs.existsSync(path.dirname(write)))
                     fs.mkdirSync(path.dirname(write), {recursive:true});
 
-                let newFile = !fs.existsSync(write) || integrityHashFile(read) !== integrityHashFile(write);
+                let isNew = !fs.existsSync(write);
+                let newFile = isNew || integrityHashFile(read) !== integrityHashFile(write);
                 if(newFile)
                     fs.copyFileSync(read, write); // should never error since the directory is created above.
 
-                let readCore = read.replace(path.resolve(from, "."), "").substr(1);
-
-                console.log(preSpace+(newFile?Symbols.success:Symbols.no_change)+" "+readCore);
+                cbFile(isNew, newFile, read.replace(path.resolve(from, "."), "").substr(1));
             };
 
-            console.log(innerBreakHeader);
-            console.log(innerBreakHeaderLine+'Env: '+chalk.bold.blueBright(cfg.backupKey));
-            console.log(innerBreakHeaderLine+'Action: '+chalk.bold.greenBright(action));
-            console.log(innerBreakHeader);
+            cbHeader(cfg.backupKey, action);
 
-            IterateFiles(from, to, runCopy, read => {
-                console.log(preSpace+'> Glob: ' + read);
-                console.log(preSpace+'> From: ' + from);
-                console.log(preSpace+'>   To: ' + to);
-                console.log(preSpace);
-            }, (err) => {
-                console.log(preSpace+'Error: '+err);
-            }, () => {
-                console.log(innerBreak);
-            });
+            IterateFiles(from, to, runCopy, cbError);
         };
 
         const integrityHashFile = (fileSrc: string): string => {
@@ -278,7 +246,10 @@ export namespace SecureConfigurations {
             }
         };
 
-        export const Restore = () => Program("restore", configuration.backupDirectory, configuration.projectRoot);
-        export const Backup = () => Program("backup", configuration.projectRoot, configuration.backupDirectory);
+        export const Restore = (cbHeader: CallbackHeader, cbFile: CallbackFile, cbError?: CallbackError) =>
+                Program(cbHeader, cbFile, "restore", configuration.backupDirectory, configuration.projectRoot, cbError);
+
+        export const Backup = (cbHeader: CallbackHeader, cbFile: CallbackFile, cbError?: CallbackError) =>
+                Program(cbHeader, cbFile, "backup", configuration.projectRoot, configuration.backupDirectory, cbError);
     }
 }
