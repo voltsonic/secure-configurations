@@ -124,7 +124,7 @@ let runCode = (hasPermission: any) => {
     if(hasPermission){
         let innerBreakHeader     = '++============';
         let innerBreakHeaderLine = '|| ';
-        let preSpace     = ' +----------------------------';
+        let preSpace     = ' +------------';
         let preSpaceLine = ' | ';
         
         if(isIntegrity){
@@ -132,11 +132,12 @@ let runCode = (hasPermission: any) => {
             let isFirstConfigMap = true;
             let nextConfigMap = () => {
                 if(configMapKeys.length === 0){
-                    console.log(preSpaceLine);
                     console.log(preSpace);
                     return;
                 }
                 if(!isFirstConfigMap) console.log(' ');
+                else isFirstConfigMap = false;
+
                 let backupKeyInner = configMapKeys.shift();
                 console.log(innerBreakHeader);
                 console.log(innerBreakHeaderLine+'Map Key: '+chalk.bold.blueBright(backupKeyInner));
@@ -200,7 +201,8 @@ let runCode = (hasPermission: any) => {
                             console.log(preSpaceLine);
                             console.log(preSpaceLine+'Recommended: Manual Check - Configs seem to need to be backed up and restored.');
                             console.log(preSpaceLine);
-                        }else if(integritys.recommendedActions.length === 1){
+                        }
+                        else if(integritys.recommendedActions.length === 1){
                             console.log(preSpaceLine);
                             let configExtras = [];
 
@@ -209,20 +211,23 @@ let runCode = (hasPermission: any) => {
                                 configExtras.unshift("");
                             }
 
-                            console.log(preSpaceLine+`secure-configurations --${integritys.recommendedActions[0]}${configExtras.join(" ")}`);
-                        }
-
-                        integritys.recommendedActions;
+                            console.log(preSpaceLine+`secure-configurations --map-key ${backupKeyInner} --${integritys.recommendedActions[0]}${configExtras.join(" ")}`);
+                            console.log(preSpaceLine);
+                        }else
+                            console.log(preSpaceLine);
 
                         nextConfigMap();
                     },
                     error => {
                         console.log(' | '+error);
+                        console.log(preSpaceLine);
+                        console.log(preSpace);
                         nextConfigMap();
                     }
                 );
-                isFirstConfigMap = false;
             };
+
+            // First Run
             nextConfigMap();
         }
         else{
@@ -245,12 +250,12 @@ let runCode = (hasPermission: any) => {
                 },
                 header: (isBackup: boolean = true) => {
                     return (mapKey: string, action: string) => {
-                        mapKey = isBackup
-                            ?chalk.bold.greenBright(mapKey)
-                            :chalk.bold.blueBright(mapKey);
+                        action = isBackup
+                            ?chalk.bold.greenBright(action)
+                            :chalk.bold.blueBright(action);
                         console.log(innerBreakHeader);
-                        console.log(innerBreakHeaderLine+'Map Key: '+mapKey);
-                        console.log(innerBreakHeaderLine+'Action: '+chalk.bold.greenBright(action));
+                        console.log(innerBreakHeaderLine+'Map Key: '+chalk.bold.blueBright(mapKey));
+                        console.log(innerBreakHeaderLine+'Action: '+action);
                         console.log(innerBreakHeader);
                         console.log(preSpaceLine);
                     };
