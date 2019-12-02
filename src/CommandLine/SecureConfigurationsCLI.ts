@@ -46,8 +46,8 @@ program
     .option("-b, --backup", "Backup files.")
     .option("-s, --show-diff", "Show a basic diff of any files that have changes.")
     .option("-u, --show-unchanged-diff", "Shows un-changed diff lines.")
-    .option('-f, --file-diff <basic-string>', 'Filter specific files with a basic string (can be partial).')
-    .option('-i, --filter-diff <basic-string>', 'Filter lines spit out by showing the diff per file with a basic string (can be partial).')
+    // .option('-e, --file-diff <basic-string>', 'Filter specific files with a basic string (can be partial).')
+    // .option('-i, --filter-diff <basic-string>', 'Filter lines spit out by showing the diff per file with a basic string (can be partial).')
     .option("-c, --config <load-config>", "Load configs (multiple allowed, loaded in order).", (_new: any, previous: any) => {
         if(!previous) previous = [];
         previous.push(_new);
@@ -63,8 +63,8 @@ let isRestore = program.restore || false;
 
 let showDiff = program.showDiff || false;
 let showUnchangedDiff = program.showUnchangedDiff || false;
-let fileDiff = program.fileDiff || false;
-let filterDiff = program.filterDiff || false;
+// let fileDiff = program.fileDiff || false;
+// let filterDiff = program.filterDiff || false;
 
 if(isBackup && isRestore)
     throw new Error("Cannot backup and restore at same time.");
@@ -122,17 +122,26 @@ let backupKey = program.mapKey || mapDefault;
 
 let runCode = (hasPermission: any) => {
     if(hasPermission){
+        let innerBreakHeader     = '++============';
+        let innerBreakHeaderLine = '|| ';
+        let preSpace     = ' +----------------------------';
+        let preSpaceLine = ' | ';
+        
         if(isIntegrity){
             let configMapKeys = Object.keys(cfgMaps);
-            console.log("configMapKeys", configMapKeys);
+            let isFirstConfigMap = true;
             let nextConfigMap = () => {
                 if(configMapKeys.length === 0){
+                    console.log(preSpaceLine);
+                    console.log(preSpace);
                     return;
                 }
+                if(!isFirstConfigMap) console.log(' ');
                 let backupKeyInner = configMapKeys.shift();
-                console.log('++============');
-                console.log('|| Map Key: '+chalk.bold.blueBright(backupKeyInner));
-                console.log('++============');
+                console.log(innerBreakHeader);
+                console.log(innerBreakHeaderLine+'Map Key: '+chalk.bold.blueBright(backupKeyInner));
+                console.log(innerBreakHeader);
+                console.log(preSpaceLine);
 
                 let backupFiles = cfgMaps[backupKeyInner].files;
                 let backupDirectory = cfgMaps[backupKeyInner].directory;
@@ -143,10 +152,6 @@ let runCode = (hasPermission: any) => {
                 if(!fs.existsSync(backupDirectory))
                     throw new Error(`Backup directory does not exist: ${backupDirectory}`);
 
-                let nextMap = () => {
-                    console.log(' ');
-                    nextConfigMap();
-                };
                 let Opts = { backupKey: backupKeyInner, backupFiles, backupDirectory, projectRoot };
                 SecureConfigurations.Configure(Opts);
 
@@ -190,16 +195,37 @@ let runCode = (hasPermission: any) => {
                                 console.log(' ++');
                             }
                         }
-                        nextMap();
+
+                        if(integritys.recommendedActions.length === 2){
+                            console.log(preSpaceLine);
+                            console.log(preSpaceLine+'Recommended: Manual Check - Configs seem to need to be backed up and restored.');
+                            console.log(preSpaceLine);
+                        }else if(integritys.recommendedActions.length === 1){
+                            console.log(preSpaceLine);
+                            let configExtras = [];
+
+                            if(program.config){
+                                configExtras = program.config.map((v: string) => (`--config ${v}`));
+                                configExtras.unshift("");
+                            }
+
+                            console.log(preSpaceLine+`secure-configurations --${integritys.recommendedActions[0]}${configExtras.join(" ")}`);
+                        }
+
+                        integritys.recommendedActions;
+
+                        nextConfigMap();
                     },
                     error => {
                         console.log(' | '+error);
-                        nextMap();
+                        nextConfigMap();
                     }
                 );
+                isFirstConfigMap = false;
             };
             nextConfigMap();
-        }else{
+        }
+        else{
             let backupFiles = cfgMaps[backupKey].files;
             let backupDirectory = cfgMaps[backupKey].directory;
 
@@ -210,10 +236,33 @@ let runCode = (hasPermission: any) => {
 
             SecureConfigurations.Configure({ backupKey, backupFiles, backupDirectory, projectRoot });
 
+            let CBs = {
+                file: (isNew: boolean, isWrite: boolean, pathRelative: string) => {
+                    console.log(preSpaceLine+(isWrite?Symbols.success:Symbols.no_change)+" "+pathRelative);
+                },
+                error: (err: string) => {
+                    console.log(preSpaceLine+'Error: '+err);
+                },
+                header: (isBackup: boolean = true) => {
+                    return (mapKey: string, action: string) => {
+                        mapKey = isBackup
+                            ?chalk.bold.greenBright(mapKey)
+                            :chalk.bold.blueBright(mapKey);
+                        console.log(innerBreakHeader);
+                        console.log(innerBreakHeaderLine+'Map Key: '+mapKey);
+                        console.log(innerBreakHeaderLine+'Action: '+chalk.bold.greenBright(action));
+                        console.log(innerBreakHeader);
+                        console.log(preSpaceLine);
+                    };
+                }
+            };
+
             isRestore
-                ?SecureConfigurations.Run.Restore()
-                :SecureConfigurations.Run.Backup()
+                ?SecureConfigurations.Run.Restore(CBs.header(), CBs.file, CBs.error)
+                :SecureConfigurations.Run.Backup(CBs.header(true), CBs.file, CBs.error)
             ;
+            console.log(preSpaceLine);
+            console.log(preSpace);
         }
     }else
         console.log("| Skipped due to user input.")
