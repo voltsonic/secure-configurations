@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+// Backup = Green (to backup)
+// Restore = Blue (from backup)
 const projectRoot = process.cwd();
 const SecureConfigurations_1 = require("../SecureConfigurations");
 const scConfig = require("../../package.json");
@@ -89,6 +91,9 @@ const getLineBreak = (s) => {
 };
 let action = isRestore ? "restore" : (isIntegrity ? "integrity" : "backup");
 let backupKey = program.mapKey || mapDefault;
+let actionTag = (isBackup, fancy = true) => isBackup
+    ? chalk.greenBright(fancy ? "Backup" : "backup")
+    : chalk.blueBright(fancy ? "Restore" : "restore");
 let runCode = (hasPermission) => {
     if (hasPermission) {
         let innerBreakHeader = '++============';
@@ -125,12 +130,22 @@ let runCode = (hasPermission) => {
                     for (let f of integritys.files) {
                         let extra = '';
                         let relLen = f.fileRelative.length;
-                        if (f.diff) {
-                            let isBackup = f.backup.lastModified < f.project.lastModified;
+                        let noBackup = !f.backup.lastModified && f.project.lastModified;
+                        let noRestore = f.backup.lastModified && !f.project.lastModified;
+                        let missingDetected = noBackup || noRestore;
+                        let changeDetected = f.diff || missingDetected;
+                        if (changeDetected) {
+                            let isBackup = false;
+                            if (f.diff && f.backup.lastModified < f.project.lastModified ||
+                                !f.diff && noBackup)
+                                isBackup = true;
                             extra = ((relLen === maxFileRelativeLen) ? "" : (" ".repeat((maxFileRelativeLen - relLen))))
-                                + chalk.greenBright(` (${isBackup ? "Backup" : "Restore"})`);
+                                + ` (${actionTag(isBackup) + (missingDetected ? chalk.redBright(' // Missing') : '')})`;
                         }
-                        console.log(` | ${f.diff ? Symbols.error : Symbols.no_change} ` + f.fileRelative + extra);
+                        let symbolMe = changeDetected
+                            ? Symbols.no_change
+                            : Symbols.error;
+                        console.log(` | ${symbolMe} ` + f.fileRelative + extra);
                         if (showDiff && f.diff) {
                             console.log(' ++');
                             for (let d of f.diff) {
@@ -203,12 +218,9 @@ let runCode = (hasPermission) => {
                 },
                 header: (isBackup = true) => {
                     return (mapKey, action) => {
-                        action = isBackup
-                            ? chalk.bold.greenBright(action)
-                            : chalk.bold.blueBright(action);
                         console.log(innerBreakHeader);
                         console.log(innerBreakHeaderLine + 'Map Key: ' + chalk.bold.blueBright(mapKey));
-                        console.log(innerBreakHeaderLine + 'Action: ' + action);
+                        console.log(innerBreakHeaderLine + 'Action: ' + actionTag(isBackup));
                         console.log(innerBreakHeader);
                         console.log(preSpaceLine);
                     };

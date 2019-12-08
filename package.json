@@ -1,6 +1,6 @@
 {
   "name": "secure-configurations",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "a more simple approach to securing files with keybase (or any other folder that at rest is encrypted)",
   "main": "secure-configurations.js",
   "scripts": {
