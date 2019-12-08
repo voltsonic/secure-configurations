@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 "use strict";
 
+// Backup = Green (to backup)
+// Restore = Blue (from backup)
+
 const projectRoot = process.cwd();
 
 import {SecureConfigurations} from "../SecureConfigurations";
@@ -120,6 +123,10 @@ const getLineBreak = (s: string): string => {
 let action = isRestore ? "restore" : (isIntegrity ? "integrity" : "backup");
 let backupKey = program.mapKey || mapDefault;
 
+let actionTag = (isBackup: boolean, fancy: boolean = true): string => isBackup
+    ?chalk.greenBright(fancy?"Backup":"backup")
+    :chalk.blueBright(fancy?"Restore":"restore");
+
 let runCode = (hasPermission: any) => {
     if(hasPermission){
         let innerBreakHeader     = '++============';
@@ -158,19 +165,34 @@ let runCode = (hasPermission: any) => {
 
                 SecureConfigurations.Run.Integrity(
                     integritys => {
+
                         let maxFileRelativeLen = integritys.files.map(v => v.fileRelative.length).sort((a,b) => (a-b)).reverse()[0];
 
                         for(let f of integritys.files){
                             let extra = '';
                             let relLen = f.fileRelative.length;
 
-                            if(f.diff){
-                                let isBackup = f.backup.lastModified < f.project.lastModified;
+                            let noBackup = !f.backup.lastModified && f.project.lastModified;
+                            let noRestore = f.backup.lastModified && !f.project.lastModified;
+                            let missingDetected = noBackup || noRestore;
+                            let changeDetected = f.diff || missingDetected;
+
+                            if(changeDetected){
+                                let isBackup: boolean = false;
+
+                                if(f.diff && f.backup.lastModified < f.project.lastModified ||
+                                    !f.diff && noBackup)
+                                    isBackup = true;
+
                                 extra = ((relLen===maxFileRelativeLen)?"":(" ".repeat((maxFileRelativeLen - relLen))))
-                                    +chalk.greenBright(` (${isBackup?"Backup":"Restore"})`);
+                                    +` (${actionTag(isBackup)+(missingDetected?chalk.redBright(' // Missing'):'')})`;
                             }
 
-                            console.log(` | ${f.diff?Symbols.error:Symbols.no_change} `+f.fileRelative+extra);
+                            let symbolMe = changeDetected
+                                ?Symbols.no_change
+                                :Symbols.error;
+
+                            console.log(` | ${symbolMe} `+f.fileRelative+extra);
 
                             if(showDiff && f.diff){
                                 console.log(' ++');
@@ -250,12 +272,9 @@ let runCode = (hasPermission: any) => {
                 },
                 header: (isBackup: boolean = true) => {
                     return (mapKey: string, action: string) => {
-                        action = isBackup
-                            ?chalk.bold.greenBright(action)
-                            :chalk.bold.blueBright(action);
                         console.log(innerBreakHeader);
                         console.log(innerBreakHeaderLine+'Map Key: '+chalk.bold.blueBright(mapKey));
-                        console.log(innerBreakHeaderLine+'Action: '+action);
+                        console.log(innerBreakHeaderLine+'Action: '+actionTag(isBackup));
                         console.log(innerBreakHeader);
                         console.log(preSpaceLine);
                     };
@@ -269,7 +288,8 @@ let runCode = (hasPermission: any) => {
             console.log(preSpaceLine);
             console.log(preSpace);
         }
-    }else
+    }
+    else
         console.log("| Skipped due to user input.")
 };
 
