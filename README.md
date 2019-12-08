@@ -21,6 +21,15 @@ Check [Example Setup](https://github.com/voltsonic/secure-configurations/blob/HE
 
 ### Preview
 
-![Integrity Check: No Updates](./screenshots/screen-secure-config-a.png)
-![Integrity Check: New Backup File (timestamp)](./screenshots/screen-secure-config-b.png)
-![Integrity Check: Backup Run](./screenshots/screen-secure-config-c.png)
+No Updates.
+![Integrity Check: No Updates](https://user-images.githubusercontent.com/6464019/70398493-484fac00-19d9-11ea-8ad6-122117f40a8f.png)
+
+New Backup File.
+![Integrity Check: New Backup File](https://user-images.githubusercontent.com/6464019/70398494-484fac00-19d9-11ea-819d-02a1cc2f559f.png)
+
+New Backup File with Diff.
+![Integrity Check: New Backup File (with diff)](https://user-images.githubusercontent.com/6464019/70398496-48e84280-19d9-11ea-8cf1-873be1c1c83e.png)
+
+Backup Run.
+![Integrity Check: Backup Run](https://user-images.githubusercontent.com/6464019/70398495-48e84280-19d9-11ea-93b4-13f9648b384f.png)
+
