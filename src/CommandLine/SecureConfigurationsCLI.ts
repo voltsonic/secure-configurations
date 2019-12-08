@@ -189,8 +189,8 @@ let runCode = (hasPermission: any) => {
                             }
 
                             let symbolMe = changeDetected
-                                ?Symbols.no_change
-                                :Symbols.error;
+                                ?Symbols.error
+                                :Symbols.no_change;
 
                             console.log(` | ${symbolMe} `+f.fileRelative+extra);
 

@@ -143,8 +143,8 @@ let runCode = (hasPermission) => {
                                 + ` (${actionTag(isBackup) + (missingDetected ? chalk.redBright(' // Missing') : '')})`;
                         }
                         let symbolMe = changeDetected
-                            ? Symbols.no_change
-                            : Symbols.error;
+                            ? Symbols.error
+                            : Symbols.no_change;
                         console.log(` | ${symbolMe} ` + f.fileRelative + extra);
                         if (showDiff && f.diff) {
                             console.log(' ++');
