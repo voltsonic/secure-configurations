@@ -17,7 +17,7 @@ this project can be used in non nodejs projects (but still requires nodejs to ru
 
 ### How to use
 
-Check [Example Setup](https://github.com/voltsonic/secure-configurations/blob/HEAD/example-setup) for a good introduction on how to use this library.
+Check [Example Setup](https://github.com/voltsonic/secure-configurations-example) for a good introduction on how to use this library.
 
 ### Preview
 

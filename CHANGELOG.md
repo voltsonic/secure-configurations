@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.6] - 2020-01-21
+### 
+- Move example to separate [project](https://github.com/voltsonic/secure-configurations-example).
+- Proper output of error messages instead of just generic node.
+- Slim up the copy phase to only show files changed.
+- Allow the "checker" to be applied with a switch added to integrity check (`-z` or `--recommended`).
+
 ## [2.1.5] - 2019-12-08
 ### Fixed
 - Missing (restore/backup) feedback when one side is missing `v2.1.3`.
@@ -52,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration via `package.json` with `secure-configurations` key.
 - Example to new standards.
 
+[2.1.6]: https://github.com/voltsonic/secure-configurations/compare/v2.1.5...v2.1.6
 [2.1.5]: https://github.com/voltsonic/secure-configurations/compare/v2.1.1...v2.1.5
 [2.1.1]: https://github.com/voltsonic/secure-configurations/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/voltsonic/secure-configurations/compare/v2.0.10...v2.1.0

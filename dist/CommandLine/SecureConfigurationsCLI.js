@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 // Backup = Green (to backup)
 // Restore = Blue (from backup)
+const child_process_1 = require("child_process");
 const projectRoot = process.cwd();
 const SecureConfigurations_1 = require("../SecureConfigurations");
 const scConfig = require("../../package.json");
@@ -14,11 +15,19 @@ const chalk = require("chalk");
 const figures = require('figures');
 const packageFile = path.join(projectRoot, "package.json");
 const pkg = require(packageFile);
+function FancyError(message, exitCode = 1) {
+    message = '  ' + message + '  ';
+    const line = ' '.repeat(message.length);
+    console.log(chalk.bgRed(line));
+    console.log(chalk.bgRed(message));
+    console.log(chalk.bgRed(line));
+    process.exit(exitCode);
+}
 if (!pkg.hasOwnProperty("secure-configurations"))
-    throw new Error("Your package.json is missing the `secure-configurations` entry.");
+    FancyError("Your package.json is missing the `secure-configurations` entry.");
 let cfgBase = pkg["secure-configurations"];
 if (!cfgBase.hasOwnProperty("maps") || Object.keys(cfgBase.maps).length === 0)
-    throw new Error("Your package.json `secure-configurations` `maps` key is missing (or empty).");
+    FancyError("Your package.json `secure-configurations` `maps` key is missing (or empty).");
 let cfgMaps = cfgBase.maps;
 let mapKeys = Object.keys(cfgMaps);
 let mapDefault = mapKeys[0];
@@ -26,6 +35,7 @@ let Symbols = {
     error: chalk.redBright(figures.cross),
     warning: chalk.yellowBright(figures.warning),
     success: chalk.greenBright(figures.tick),
+    is_new: chalk.blueBright('+'),
     no_change: chalk.green(figures.hamburger),
     backup: chalk.cyan(figures.arrowRight),
     restore: chalk.cyan(figures.arrowLeft)
@@ -36,6 +46,7 @@ program
     .option("-m, --map-key <map-key>", "Map key to backup/restore [" + mapKeys.sort().map(m => ((m === mapDefault ? "*" : "") + m)).join(", ") + "] * default (does not include custom --config).", mapDefault)
     .option("-r, --restore", "Restore files.")
     .option("-b, --backup", "Backup files.")
+    .option("-z, --recommended", "Run recommended backup/restores if possible on integrity check.")
     .option("-s, --show-diff", "Show a basic diff of any files that have changes.")
     .option("-u, --show-unchanged-diff", "Shows un-changed diff lines.")
     // .option('-e, --file-diff <basic-string>', 'Filter specific files with a basic string (can be partial).')
@@ -50,12 +61,13 @@ program
 program.parse(process.argv);
 let isBackup = program.backup || false;
 let isRestore = program.restore || false;
+let runRecommended = program.recommended || false;
 let showDiff = program.showDiff || false;
 let showUnchangedDiff = program.showUnchangedDiff || false;
 // let fileDiff = program.fileDiff || false;
 // let filterDiff = program.filterDiff || false;
 if (isBackup && isRestore)
-    throw new Error("Cannot backup and restore at same time.");
+    FancyError("Cannot backup and restore at same time.");
 let isIntegrity = !isBackup && !isRestore;
 // Inject custom.
 if (program.config) {
@@ -94,18 +106,34 @@ let backupKey = program.mapKey || mapDefault;
 let actionTag = (isBackup, fancy = true) => isBackup
     ? chalk.greenBright(fancy ? "Backup" : "backup")
     : chalk.blueBright(fancy ? "Restore" : "restore");
+let runCommands = [];
+let innerBreakHeader = '++============';
+let innerBreakHeaderLine = '|| ';
+let preSpace = ' +------------';
+let preSpaceLine = ' | ';
+const runCommandsAfter = () => {
+    if (runCommands.length === 0) {
+        console.log(preSpace);
+        return;
+    }
+    else {
+        let next = runCommands.shift();
+        child_process_1.exec(next, (error, stdout, stderr) => {
+            console.log(preSpaceLine + (error ? Symbols.error : Symbols.success) + ' ' + next);
+            runCommandsAfter();
+        });
+    }
+};
 let runCode = (hasPermission) => {
     if (hasPermission) {
-        let innerBreakHeader = '++============';
-        let innerBreakHeaderLine = '|| ';
-        let preSpace = ' +------------';
-        let preSpaceLine = ' | ';
         if (isIntegrity) {
             let configMapKeys = Object.keys(cfgMaps);
             let isFirstConfigMap = true;
             let nextConfigMap = () => {
                 if (configMapKeys.length === 0) {
                     console.log(preSpace);
+                    if (runRecommended && runCommands.length > 0)
+                        runCommandsAfter();
                     return;
                 }
                 if (!isFirstConfigMap)
@@ -113,16 +141,16 @@ let runCode = (hasPermission) => {
                 else
                     isFirstConfigMap = false;
                 let backupKeyInner = configMapKeys.shift();
+                let backupFiles = cfgMaps[backupKeyInner].files;
+                let backupDirectory = cfgMaps[backupKeyInner].directory;
+                if (backupFiles.length <= 0)
+                    FancyError(`Backup files for ${backupKeyInner} is empty.`);
+                if (!fs.existsSync(backupDirectory))
+                    FancyError(`Backup directory does not exist: ${backupDirectory}`);
                 console.log(innerBreakHeader);
                 console.log(innerBreakHeaderLine + 'Map Key: ' + chalk.bold.blueBright(backupKeyInner));
                 console.log(innerBreakHeader);
                 console.log(preSpaceLine);
-                let backupFiles = cfgMaps[backupKeyInner].files;
-                let backupDirectory = cfgMaps[backupKeyInner].directory;
-                if (backupFiles.length <= 0)
-                    throw new Error(`Backup files for ${backupKeyInner} is empty.`);
-                if (!fs.existsSync(backupDirectory))
-                    throw new Error(`Backup directory does not exist: ${backupDirectory}`);
                 let Opts = { backupKey: backupKeyInner, backupFiles, backupDirectory, projectRoot };
                 SecureConfigurations_1.SecureConfigurations.Configure(Opts);
                 SecureConfigurations_1.SecureConfigurations.Run.Integrity(integritys => {
@@ -175,7 +203,7 @@ let runCode = (hasPermission) => {
                     }
                     if (integritys.recommendedActions.length === 2) {
                         console.log(preSpaceLine);
-                        console.log(preSpaceLine + 'Recommended: Manual Check - Configs seem to need to be backed up and restored.');
+                        console.log(preSpaceLine + 'Recommended: Manual Check - Configs require backup and restore.');
                         console.log(preSpaceLine);
                     }
                     else if (integritys.recommendedActions.length === 1) {
@@ -185,7 +213,10 @@ let runCode = (hasPermission) => {
                             configExtras = program.config.map((v) => (`--config ${v}`));
                             configExtras.unshift("");
                         }
-                        console.log(preSpaceLine + `secure-configurations --map-key ${backupKeyInner} --${integritys.recommendedActions[0]}${configExtras.join(" ")}`);
+                        const runCommand = `secure-configurations --map-key ${backupKeyInner} --${integritys.recommendedActions[0]}${configExtras.join(" ")}`;
+                        console.log(preSpaceLine + runCommand);
+                        if (runRecommended)
+                            runCommands.push(runCommand + ' -f');
                         console.log(preSpaceLine);
                     }
                     else
@@ -205,13 +236,14 @@ let runCode = (hasPermission) => {
             let backupFiles = cfgMaps[backupKey].files;
             let backupDirectory = cfgMaps[backupKey].directory;
             if (backupFiles.length <= 0)
-                throw new Error(`Backup files for ${backupKey} is empty.`);
+                FancyError(`Backup files for ${backupKey} is empty.`);
             if (!fs.existsSync(backupDirectory))
-                throw new Error(`Backup directory does not exist: ${backupDirectory}`);
+                FancyError(`Backup directory does not exist: ${backupDirectory}`);
             SecureConfigurations_1.SecureConfigurations.Configure({ backupKey, backupFiles, backupDirectory, projectRoot });
             let CBs = {
                 file: (isNew, isWrite, pathRelative) => {
-                    console.log(preSpaceLine + (isWrite ? Symbols.success : Symbols.no_change) + " " + pathRelative);
+                    if (isWrite)
+                        console.log(preSpaceLine + (isNew ? Symbols.is_new : Symbols.success) + " " + pathRelative);
                 },
                 error: (err) => {
                     console.log(preSpaceLine + 'Error: ' + err);
@@ -237,7 +269,7 @@ let runCode = (hasPermission) => {
         console.log("| Skipped due to user input.");
 };
 if (mapKeys.indexOf(backupKey) < 0)
-    throw new Error(`Map Key: ${backupKey} not found`);
+    FancyError(`Map Key: ${backupKey} not found`);
 if (isIntegrity || program.forceRun)
     runCode(true);
 else
